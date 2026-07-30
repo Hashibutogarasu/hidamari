@@ -127,10 +127,14 @@ class HidamariServer:
         logger.info(f"[Mode] {mode}")
         self.config[CONFIG_KEY_MODE] = mode
 
-        # Set data source if specified
-        if data_source and monitor:
-            self.config[CONFIG_KEY_DATA_SOURCE][monitor] = data_source
-        self.config[CONFIG_KEY_DATA_SOURCE]["Default"] = data_source  # always update default source
+        if data_source:
+            if monitor == "Default":
+                for key in self.config[CONFIG_KEY_DATA_SOURCE]:
+                    self.config[CONFIG_KEY_DATA_SOURCE][key] = data_source
+            elif monitor:
+                self.config[CONFIG_KEY_DATA_SOURCE][monitor] = data_source
+            self.config[CONFIG_KEY_DATA_SOURCE]["Default"] = data_source
+            self._save_config()
 
         # Quit current then create a new player
         self._quit_player()
