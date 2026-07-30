@@ -86,6 +86,11 @@ it manually instead (for example, on a Flatpak install, or if you skipped `kpack
 ```bash
 kpackagetool5 --type Plasma/Wallpaper --install data/plasma/wallpapers/io.github.jeffshee.Hidamari.wallpaper
 ```
+`--install` only works the first time; if the plugin is already registered (or to pick up changes
+after updating the source), use `--upgrade` instead:
+```bash
+kpackagetool5 --type Plasma/Wallpaper --upgrade data/plasma/wallpapers/io.github.jeffshee.Hidamari.wallpaper
+```
 Flatpak users can also install it from within the running app, via the "Install Plasma
 wallpaper plugin" button in the hamburger menu.
 
