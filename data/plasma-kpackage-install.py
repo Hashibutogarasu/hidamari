@@ -20,7 +20,9 @@ def main():
 
     package_dir = sys.argv[1]
     install = subprocess.run(
-        [kpackagetool5, "--type", "Plasma/Wallpaper", "--install", package_dir]
+        [kpackagetool5, "--type", "Plasma/Wallpaper", "--install", package_dir],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     if install.returncode == 0:
         return 0
