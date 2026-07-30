@@ -277,6 +277,8 @@ class PlayerWindow(Gtk.ApplicationWindow):
 
     def _on_button_press_event(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
+            if event.state & Gdk.ModifierType.SHIFT_MASK:
+                return False
             if not self.menu:
                 self.menu = build_menu(MODE_VIDEO)
             self.menu.popup_at_pointer()
