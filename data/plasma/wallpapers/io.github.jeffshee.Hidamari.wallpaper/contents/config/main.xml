@@ -6,6 +6,14 @@
   <kcfgfile name=""/>
 
   <group name="General">
+    <entry name="Volume" type="Int">
+      <label>Playback volume</label>
+      <default>50</default>
+    </entry>
+    <entry name="Mute" type="Bool">
+      <label>Mute audio</label>
+      <default>false</default>
+    </entry>
   </group>
 
 </kcfg>

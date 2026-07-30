@@ -39,6 +39,10 @@ uninstall: $(BUILDDIR) ## Remove a previous install from PREFIX
 	ninja -C $(BUILDDIR) uninstall
 	@command -v kpackagetool5 >/dev/null && kpackagetool5 --type Plasma/Wallpaper --remove io.github.jeffshee.Hidamari.wallpaper || true
 
+plasma-preview: install ## Reinstall the Plasma wallpaper KPackage and preview it with plasmawindowed
+	kpackagetool5 --type Plasma/Wallpaper --upgrade data/plasma/wallpapers/io.github.jeffshee.Hidamari.wallpaper
+	plasmawindowed io.github.jeffshee.Hidamari.wallpaper
+
 # --- Translations (gettext, via Meson) --------------------------------------
 
 pot: $(BUILDDIR) ## Regenerate po/hidamari.pot (with a filled-in header)
@@ -70,4 +74,4 @@ help: ## Show this help
 		| sort \
 		| awk 'BEGIN {FS = ":.*?## "} {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: sync run lint format build install uninstall pot update-po pypi-deps flatpak clean help
+.PHONY: sync run lint format build install uninstall plasma-preview pot update-po pypi-deps flatpak clean help
