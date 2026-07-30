@@ -104,6 +104,12 @@ installed via a plain file copy, which Plasma discovers by path.
 make install                      # ~/.local
 sudo make install PREFIX=/usr/local
 ```
+On KDE Plasma, the desktop entry's icon/metadata are cached separately from the
+`update-desktop-database` cache Meson already refreshes. If a newly installed or updated icon
+isn't picked up, pass `REBUILD_SYCOCA=1` to also force that cache to rebuild:
+```bash
+make install REBUILD_SYCOCA=1
+```
 
 ### Uninstall
 ```bash

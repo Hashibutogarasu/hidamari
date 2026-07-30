@@ -1,10 +1,11 @@
 # Dev convenience wrapper. Run `make` or `make help` for the target list.
 # Override BUILDDIR=... to change the Meson build directory.
 
-BUILDDIR    ?= _build
-PREFIX      ?= $(HOME)/.local
-FLATPAK_DIR ?= build-flatpak
-MANIFEST    := pkgs/flatpak/io.github.jeffshee.Hidamari.json
+BUILDDIR       ?= _build
+PREFIX         ?= $(HOME)/.local
+FLATPAK_DIR    ?= build-flatpak
+MANIFEST       := pkgs/flatpak/io.github.jeffshee.Hidamari.json
+REBUILD_SYCOCA ?=
 
 .DEFAULT_GOAL := help
 
@@ -31,8 +32,11 @@ $(BUILDDIR):
 build: $(BUILDDIR) ## Configure (if needed) and compile
 	meson compile -C $(BUILDDIR)
 
-install: $(BUILDDIR) ## Install into PREFIX (default ~/.local, no sudo)
+install: $(BUILDDIR) ## Install into PREFIX (default ~/.local, no sudo). Pass REBUILD_SYCOCA=1 to also force KDE to pick up the updated desktop entry (kbuildsycoca5), needed since KDE caches it separately from update-desktop-database.
 	meson install -C $(BUILDDIR)
+	@if [ -n "$(REBUILD_SYCOCA)" ]; then \
+		command -v kbuildsycoca5 >/dev/null && kbuildsycoca5 --noincremental || true; \
+	fi
 
 uninstall: $(BUILDDIR) ## Remove a previous install from PREFIX
 	@test -f $(BUILDDIR)/meson-logs/install-log.txt || meson install -C $(BUILDDIR) >/dev/null
