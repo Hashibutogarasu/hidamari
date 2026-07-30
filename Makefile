@@ -37,6 +37,7 @@ install: $(BUILDDIR) ## Install into PREFIX (default ~/.local, no sudo)
 uninstall: $(BUILDDIR) ## Remove a previous install from PREFIX
 	@test -f $(BUILDDIR)/meson-logs/install-log.txt || meson install -C $(BUILDDIR) >/dev/null
 	ninja -C $(BUILDDIR) uninstall
+	@command -v kpackagetool5 >/dev/null && kpackagetool5 --type Plasma/Wallpaper --remove io.github.jeffshee.Hidamari.wallpaper || true
 
 # --- Translations (gettext, via Meson) --------------------------------------
 

@@ -41,3 +41,16 @@ if compile_schemas.found()
 endif
 
 subdir('icons')
+
+plasma_wallpaper_id = 'io.github.jeffshee.Hidamari.wallpaper'
+
+install_subdir('plasma/wallpapers/' + plasma_wallpaper_id,
+  install_dir: join_paths(get_option('datadir'), 'plasma/wallpapers')
+)
+
+kpackagetool5 = find_program('kpackagetool5', required: false)
+if kpackagetool5.found()
+  meson.add_install_script('plasma-kpackage-install.py',
+    join_paths(meson.current_source_dir(), 'plasma/wallpapers', plasma_wallpaper_id)
+  )
+endif
