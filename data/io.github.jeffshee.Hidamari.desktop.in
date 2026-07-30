@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Hidamari
-Exec=hidamari
+Exec=@bindir@/hidamari
 Icon=io.github.jeffshee.Hidamari
 Terminal=false
 Type=Application
