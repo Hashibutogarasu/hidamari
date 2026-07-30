@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Jeff Shee",
+                "Email": "jeffshee8969@gmail.com"
+            }
+        ],
+        "Category": "",
+        "Description": "Video wallpaper for Linux",
+        "Icon": "io.github.jeffshee.Hidamari",
+        "Id": "io.github.jeffshee.Hidamari.wallpaper",
+        "License": "GPL-3.0-or-later",
+        "Name": "Hidamari",
+        "Website": "https://github.com/jeffshee/hidamari"
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell"
+}

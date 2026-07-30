@@ -258,6 +258,21 @@ All Contributors https://github.com/jeffshee/hidamari/graphs/contributors</prope
           </packing>
         </child>
         <child>
+          <object class="GtkModelButton" id="ButtonInstallPlasmaWallpaper">
+            <property name="visible">False</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+            <property name="action-name">app.install_plasma_wallpaper</property>
+            <property name="tooltip-text" translatable="yes">Register Hidamari as a Plasma wallpaper plugin in System Settings</property>
+            <property name="text" translatable="yes">Install Plasma wallpaper plugin</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">11</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkModelButton">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
@@ -268,7 +283,7 @@ All Contributors https://github.com/jeffshee/hidamari/graphs/contributors</prope
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">11</property>
+            <property name="position">12</property>
           </packing>
         </child>
         <child>
@@ -282,7 +297,7 @@ All Contributors https://github.com/jeffshee/hidamari/graphs/contributors</prope
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">12</property>
+            <property name="position">13</property>
           </packing>
         </child>
         <child>
@@ -296,7 +311,7 @@ All Contributors https://github.com/jeffshee/hidamari/graphs/contributors</prope
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">13</property>
+            <property name="position">14</property>
           </packing>
         </child>
       </object>
