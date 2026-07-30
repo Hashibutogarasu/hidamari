@@ -3,12 +3,13 @@ import multiprocessing as mp
 import sys
 from abc import abstractmethod
 
+import cairo
 import gi
 import setproctitle
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
-from gi.repository import Gdk, Gio, Gtk
+from gi.repository import Gdk, Gio, GLib, Gtk
 from pydbus import SessionBus
 
 from hidamari.commons import DBUS_NAME_PLAYER, LOGGER_NAME, PROJECT
@@ -18,6 +19,44 @@ from hidamari.utils import gnome_desktop_icon_workaround
 logger = logging.getLogger(LOGGER_NAME)
 
 APP_ID = f"{PROJECT}.player"
+SHIFT_POLL_INTERVAL_MS = 100
+
+
+def is_shift_held():
+    """Check whether Shift is currently held, independent of keyboard focus.
+
+    DESKTOP-hinted/layer-shell background windows don't receive keyboard
+    focus, so a regular `key-press-event` can't reliably report this;
+    polling the pointer device's modifier state works regardless of focus.
+    """
+    display = Gdk.Display.get_default()
+    seat = display.get_default_seat()
+    pointer = seat.get_pointer()
+    root = display.get_default_screen().get_root_window()
+    state = root.get_device_position(pointer)
+    return bool(state.mask & Gdk.ModifierType.SHIFT_MASK)
+
+
+def set_click_passthrough(window, enabled):
+    """Make `window` let every pointer click through to whatever is beneath it
+    (enabled=True) or receive clicks normally again (enabled=False).
+
+    Returning False from a GTK button-press handler only marks the event as
+    unhandled within this process; it does not redeliver the same click to
+    another top-level window (the desktop/compositor). An empty input
+    region is what actually excludes the window from receiving the click at
+    the X11/Wayland level, letting it reach the desktop environment's own
+    context menu instead.
+    """
+    gdk_window = window.get_window()
+    if gdk_window is None:
+        return
+    if enabled:
+        gdk_window.input_shape_combine_region(cairo.Region(), 0, 0)
+    else:
+        alloc = window.get_allocation()
+        full_region = cairo.Region(cairo.RectangleInt(0, 0, alloc.width, alloc.height))
+        gdk_window.input_shape_combine_region(full_region, 0, 0)
 
 
 class DummyWindow(Gtk.ApplicationWindow):
@@ -47,7 +86,18 @@ class BasePlayer(Gtk.Application):
         )
         setproctitle.setproctitle(mp.current_process().name)
         self.windows = dict()
+        self._shift_held = False
         self._monitor_detect()
+        GLib.timeout_add(SHIFT_POLL_INTERVAL_MS, self._poll_shift_state)
+
+    def _poll_shift_state(self):
+        shift_held = is_shift_held()
+        if shift_held != self._shift_held:
+            self._shift_held = shift_held
+            for window in self.windows.values():
+                if window:
+                    set_click_passthrough(window, shift_held)
+        return True
 
     def _monitor_detect(self):
         display = Gdk.Display.get_default()
