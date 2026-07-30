@@ -68,6 +68,20 @@ sudo apt install dconf-cli libappindicator3-1 libgnome-desktop-4-1 libwebkit2gtk
 sudo dnf install dconf glx-utils gnome-desktop4 libappindicator-gtk3 libwnck3 vdpauinfo webkit2gtk4.1 xdg-user-dirs
 ```
 
+#### KDE Plasma Wayland dependencies (optional)
+Native Wayland rendering under KDE Plasma/KWin (5.24+) requires `gtk-layer-shell`. Without it, Hidamari
+falls back to the existing X11/XWayland path with a logged warning.
+
+- Ubuntu:
+```bash
+sudo apt install gir1.2-gtklayershell-0.1 libgtk-layer-shell0
+```
+
+- Fedora:
+```bash
+sudo dnf install gtk-layer-shell
+```
+
 #### Build dependencies
 - Ubuntu:
 ```bash

@@ -66,6 +66,35 @@ def is_wayland():
     return os.environ.get("XDG_SESSION_TYPE") == "wayland"
 
 
+def is_kde():
+    """
+    Check if current DE is KDE Plasma or not, by looking for the word "kde"
+    in $XDG_CURRENT_DESKTOP (matching the substring-match style of is_gnome()).
+    """
+    return "kde" in str(os.environ.get("XDG_CURRENT_DESKTOP") or "").lower()
+
+
+def should_use_layer_shell():
+    """
+    Decide whether Hidamari should render as a native wlr-layer-shell Wayland
+    surface (KDE Plasma/KWin) instead of the legacy X11/XWayland DESKTOP-hint
+    window. Falls back to the X11 path, with a logged warning, on any KDE
+    Wayland session where gtk-layer-shell isn't installed or the compositor
+    doesn't support it.
+    """
+    if not (is_kde() and is_wayland()):
+        return False
+    from hidamari.player.backends import layer_shell
+
+    if not layer_shell.is_supported():
+        logger.warning(
+            "[Backend] KDE Wayland detected but gtk-layer-shell is unavailable, "
+            "falling back to XWayland"
+        )
+        return False
+    return True
+
+
 def is_flatpak():
     """
     Check if Hidamari is a Flatpak

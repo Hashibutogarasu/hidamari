@@ -9,6 +9,7 @@
         "--share=ipc",
         "--device=dri",
         "--socket=x11",
+        "--socket=wayland",
         "--socket=pulseaudio",
         "--filesystem=xdg-videos/Hidamari:create",
         "--talk-name=org.gnome.Shell.Extensions",
@@ -120,6 +121,21 @@
                         "version-query": ".tag_name",
                         "url-query": ".assets[] | select(.name==\"libportal-\" + $version + \".tar.xz\") | .browser_download_url"
                     }
+                }
+            ]
+        },
+        {
+            "name": "gtk-layer-shell",
+            "buildsystem": "meson",
+            "config-opts": [
+                "-Dvapi=false"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/wmww/gtk-layer-shell.git",
+                    "tag": "v0.10.1",
+                    "commit": "fd88ba666c18ff65ea786bf7b2e270d840030817"
                 }
             ]
         },
