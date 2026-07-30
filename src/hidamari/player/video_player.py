@@ -1,4 +1,3 @@
-import ctypes
 import glob
 import logging
 import os
@@ -35,6 +34,7 @@ from hidamari.commons import (
     MODE_VIDEO,
 )
 from hidamari.menu import build_menu
+from hidamari.player.backends import get_window_backend
 from hidamari.player.base_player import BasePlayer
 from hidamari.utils import (
     ActiveHandler,
@@ -42,6 +42,7 @@ from hidamari.utils import (
     is_flatpak,
     is_gnome,
     is_wayland,
+    should_use_layer_shell,
 )
 from hidamari.yt_utils import get_best_audio, get_formats, get_optimal_video
 
@@ -106,10 +107,14 @@ class Fade:
 
 
 class VLCWidget(Gtk.DrawingArea):
-    """
-    Simple VLC widget.
-    Its player can be controlled through the 'player' attribute, which
-    is a vlc.MediaPlayer() instance.
+    """Simple VLC widget rendering into a Gtk.DrawingArea.
+
+    Its player can be controlled through the 'player' attribute, a
+    vlc.MediaPlayer() instance. Allows the screensaver to run
+    (`--no-disable-screensaver`) and forces PulseAudio output
+    (`--aout=pulse`), since VLC's PipeWire plugin segfaults
+    (pw_thread_loop_lock) when multiple player instances are active at
+    once, e.g. one per monitor.
     """
 
     __gtype_name__ = "VLCWidget"
@@ -117,22 +122,12 @@ class VLCWidget(Gtk.DrawingArea):
     def __init__(self, width, height):
         Gtk.DrawingArea.__init__(self)
 
-        # Spawn a VLC instance and create a new media player to embed.
-        # Some options need to be specified when instantiating VLC.
-        # --no-disable-screensaver: Allow screensaver.
-        # --aout=pulse: Force PulseAudio output. VLC's PipeWire audio-output
-        #   plugin segfaults (pw_thread_loop_lock) when multiple instances are
-        #   active, e.g. one per monitor. See the Flatpak, which uses Pulse too.
         vlc_options = ["--no-disable-screensaver", "--aout=pulse"]
         self.instance = vlc.Instance(vlc_options)
         self.player = self.instance.media_player_new()
 
-        def handle_embed(*args):
-            self.player.set_xwindow(self.get_window().get_xid())
-            return True
-
-        # Embed and set size.
-        self.connect("realize", handle_embed)
+        _placement, video_backend = get_window_backend()
+        video_backend.embed_video(self.player, self, width, height)
         self.set_size_request(width, height)
 
     def cleanup(self):
@@ -319,22 +314,14 @@ class VideoPlayer(BasePlayer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Initialize X11 threads so VLC can use hardware decoding.
-        # `libX11.so.6` fix for Fedora 33
-        x11 = None
-        for lib in ["libX11.so", "libX11.so.6"]:
-            try:
-                x11 = ctypes.cdll.LoadLibrary(lib)
-            except OSError:
-                pass
-            if x11 is not None:
-                x11.XInitThreads()
-                break
+        if not should_use_layer_shell():
+            from hidamari.player.backends.x11 import init_threads
+
+            init_threads()
 
         self.config = None
         self.reload_config()
 
-        # Static wallpaper (currently for GNOME only)
         if is_gnome():
             self.original_wallpaper_uri = None
             self.original_wallpaper_uri_dark = None

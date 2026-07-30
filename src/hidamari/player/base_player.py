@@ -12,6 +12,7 @@ from gi.repository import Gdk, Gio, Gtk
 from pydbus import SessionBus
 
 from hidamari.commons import DBUS_NAME_PLAYER, LOGGER_NAME, PROJECT
+from hidamari.player.backends import get_window_backend
 from hidamari.utils import gnome_desktop_icon_workaround
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -68,11 +69,10 @@ class BasePlayer(Gtk.Application):
 
     def _on_size_changed(self, *args):
         logger.info("[Player] size-changed")
-        for monitor in self.windows:
-            rect = monitor.get_geometry()
-            x, y, width, height = rect.x, rect.y, rect.width, rect.height
-            monitor.win_resize(width, height)
-            monitor.win_move(x, y)
+        placement, _video = get_window_backend()
+        for monitor, window in self.windows.items():
+            if window:
+                placement.place_window(window, monitor)
 
     def _on_monitor_added(self, _, gdk_monitor, *args):
         logger.info("[Player] monitor-added")
@@ -87,17 +87,13 @@ class BasePlayer(Gtk.Application):
         Gtk.Application.do_startup(self)
 
     def do_activate(self):
+        placement, _video = get_window_backend()
         for monitor in self.windows:
             if not self.windows[monitor]:
                 window = self.new_window(monitor)
-                window.set_type_hint(Gdk.WindowTypeHint.DESKTOP)
-                rect = monitor.get_geometry()
-                x, y, width, height = rect.x, rect.y, rect.width, rect.height
-                window.set_size_request(width, height)
-                window.move(x, y)
+                placement.place_window(window, monitor)
                 self.windows[monitor] = window
             self.windows[monitor].present()
-        # Workaround for DING extension
         gnome_desktop_icon_workaround()
 
     @property

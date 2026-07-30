@@ -5,15 +5,15 @@ import sys
 
 from hidamari import server
 from hidamari.commons import LOGGER_NAME, VIDEO_WALLPAPER_DIR
-from hidamari.utils import is_flatpak, is_gnome, is_wayland
+from hidamari.utils import is_flatpak, is_gnome, is_wayland, should_use_layer_shell
 
 logger = logging.getLogger(LOGGER_NAME)
 
 
 # TODO: Add locale support
 def main(version="devel", pkgdatadir="/usr/share/hidamari", localedir="/usr/share/locale"):
-    # Make sure that X11 is the backend. Revert Wayland to XWayland.
-    os.environ["GDK_BACKEND"] = "x11"
+    if not should_use_layer_shell():
+        os.environ["GDK_BACKEND"] = "x11"
     # Suppress VLC Log
     os.environ["VLC_VERBOSE"] = "-1"
 
