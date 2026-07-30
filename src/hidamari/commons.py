@@ -6,6 +6,7 @@ LOGGER_NAME = "Hidamari"
 PROJECT = "io.github.jeffshee.Hidamari"
 DBUS_NAME_SERVER = f"{PROJECT}.server"
 DBUS_NAME_PLAYER = f"{PROJECT}.player"
+PLASMA_WALLPAPER_ID = f"{PROJECT}.wallpaper"
 
 # gettext text domain (matches po/meson.build and the installed hidamari.mo)
 TRANSLATION_DOMAIN = "hidamari"

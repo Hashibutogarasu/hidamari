@@ -93,6 +93,11 @@ sudo apt install git meson gtk-update-icon-cache desktop-file-utils
 sudo dnf install git meson gtk-update-icon-cache desktop-file-utils
 ```
 
+`kpackagetool5` (part of `kpackage`, package name `kpackagetool5` on both Ubuntu and Fedora) is an
+optional build dependency: when present, `make install`/`make uninstall` also register/unregister
+the bundled Plasma wallpaper plugin with Plasma's KPackage cache. Without it, the plugin is still
+installed via a plain file copy, which Plasma discovers by path.
+
 ### Install
 `make install` installs into `~/.local` (no sudo). For a system-wide install, pass a prefix:
 ```bash
@@ -104,7 +109,25 @@ sudo make install PREFIX=/usr/local
 ```bash
 make uninstall
 ```
-This removes exactly what `make install` installed (from the same `PREFIX`).
+This removes exactly what `make install` installed (from the same `PREFIX`), including
+unregistering the Plasma wallpaper plugin via `kpackagetool5` if it's present.
+
+For the Flatpak build, uninstalling the Flatpak itself does not unregister the Plasma wallpaper
+plugin from the host (there is no app code left to run a cleanup step at that point). If you
+installed it via the GUI's "Install Plasma wallpaper plugin" button, remove it manually:
+```bash
+kpackagetool5 --type Plasma/Wallpaper --remove io.github.jeffshee.Hidamari.wallpaper
+```
+
+### Plasma wallpaper plugin development
+Previewing `contents/ui/main.qml`/`config.qml` changes doesn't require a full reinstall and
+System Settings restart. `plasmawindowed` (part of `plasma-workspace` on both Ubuntu and Fedora)
+loads a single plugin, by ID, in its own window against a real Plasma session:
+```bash
+kpackagetool5 --type Plasma/Wallpaper --upgrade data/plasma/wallpapers/io.github.jeffshee.Hidamari.wallpaper
+plasmawindowed io.github.jeffshee.Hidamari.wallpaper
+```
+`make plasma-preview` wraps both steps.
 
 ## Build as Flatpak
 First, please make sure you have `flatpak` and `flatpak-builder` installed on your system. For more details, please refer to the [Flatpak official documentation](https://docs.flatpak.org/en/latest/first-build.html).

@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 
-from hidamari import server
 from hidamari.commons import LOGGER_NAME, VIDEO_WALLPAPER_DIR
 from hidamari.utils import is_flatpak, is_gnome, is_wayland, should_use_layer_shell
 
@@ -12,11 +11,6 @@ logger = logging.getLogger(LOGGER_NAME)
 
 # TODO: Add locale support
 def main(version="devel", pkgdatadir="/usr/share/hidamari", localedir="/usr/share/locale"):
-    if not should_use_layer_shell():
-        os.environ["GDK_BACKEND"] = "x11"
-    # Suppress VLC Log
-    os.environ["VLC_VERBOSE"] = "-1"
-
     parser = argparse.ArgumentParser(description=f"Hidamari v{version}")
     parser.add_argument(
         "-p",
@@ -31,7 +25,26 @@ def main(version="devel", pkgdatadir="/usr/share/hidamari", localedir="/usr/shar
     )
     parser.add_argument("-d", "--debug", action="store_true", help="Print debug messages.")
     parser.add_argument("-r", "--reset", action="store_true", help="Reset user configuration.")
+    parser.add_argument(
+        "--dbus",
+        nargs=argparse.REMAINDER,
+        metavar="COMMAND",
+        help="Bridge a get/set/call command to the running D-Bus server and exit "
+        "(used by the Plasma wallpaper plugin's QML config panel).",
+    )
     args = parser.parse_args()
+
+    if args.dbus is not None:
+        from hidamari.plasma_bridge import main as plasma_bridge_main
+
+        return plasma_bridge_main(args.dbus)
+
+    from hidamari import server
+
+    if not should_use_layer_shell():
+        os.environ["GDK_BACKEND"] = "x11"
+    # Suppress VLC Log
+    os.environ["VLC_VERBOSE"] = "-1"
 
     # Setup logger
     if args.debug:

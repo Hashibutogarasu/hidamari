@@ -1,6 +1,7 @@
 import logging
 import multiprocessing as mp
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -34,6 +35,7 @@ from hidamari.commons import (
     MODE_STREAM,
     MODE_VIDEO,
     MODE_WEBPAGE,
+    PLASMA_WALLPAPER_ID,
     PROJECT,
     TRANSLATION_DOMAIN,
     VIDEO_WALLPAPER_DIR,
@@ -44,7 +46,9 @@ from hidamari.utils import (
     ConfigUtil,
     get_video_paths,
     init_translations,
+    is_flatpak,
     is_gnome,
+    is_kde,
     is_wayland,
     setup_autostart,
 )
@@ -56,9 +60,18 @@ APP_ID = f"{PROJECT}.gui"
 APP_TITLE = "Hidamari"
 APP_UI_RESOURCE_PATH = "/io/jeffshee/Hidamari/control.ui"
 
+DBUS_PROPERTY_TO_CONFIG_KEY = {
+    "volume": CONFIG_KEY_VOLUME,
+    "is_mute": CONFIG_KEY_MUTE,
+    "blur_radius": CONFIG_KEY_BLUR_RADIUS,
+    "is_static_wallpaper": CONFIG_KEY_STATIC_WALLPAPER,
+    "is_pause_when_maximized": CONFIG_KEY_PAUSE_WHEN_MAXIMIZED,
+    "is_mute_when_maximized": CONFIG_KEY_MUTE_WHEN_MAXIMIZED,
+}
+
 
 class ControlPanel(Gtk.Application):
-    def __init__(self, version, *args, **kwargs):
+    def __init__(self, version, pkgdatadir="/usr/share/hidamari", *args, **kwargs):
         super().__init__(
             *args,
             application_id=APP_ID,
@@ -80,8 +93,8 @@ class ControlPanel(Gtk.Application):
         }
         self.builder.connect_signals(signals)
 
-        # Variables init
         self.version = version
+        self.pkgdatadir = pkgdatadir
         self.window = None
         self.server = None
         self.icon_view = None
@@ -109,8 +122,16 @@ class ControlPanel(Gtk.Application):
     def _connect_server(self):
         try:
             self.server = SessionBus().get(DBUS_NAME_SERVER)
+            self.server.PropertiesChanged.connect(self._on_server_properties_changed)
         except GLib.Error:
             logger.error("[GUI] Couldn't connect to server")
+
+    def _on_server_properties_changed(self, _interface_name, changed, _invalidated):
+        for name, value in changed.items():
+            config_key = DBUS_PROPERTY_TO_CONFIG_KEY.get(name)
+            if config_key is not None:
+                self.config[config_key] = value
+        self._reload_all_widgets()
 
     def _setup_context_menu(self):
         self.contextMenu_monitors = Gtk.Menu()
@@ -149,6 +170,7 @@ class ControlPanel(Gtk.Application):
             ("local_web_page_apply", self.on_local_web_page_apply),
             ("play_pause", self.on_play_pause),
             ("feeling_lucky", self.on_feeling_lucky),
+            ("install_plasma_wallpaper", self.on_install_plasma_wallpaper),
             (
                 "config",
                 lambda *_: subprocess.run(["xdg-open", os.path.realpath(CONFIG_PATH)]),
@@ -193,8 +215,10 @@ class ControlPanel(Gtk.Application):
             self.builder.get_object("TogglePauseWhenMaximized").set_visible(False)
             self.builder.get_object("ToggleMuteWhenMaximized").set_visible(False)
 
+        if is_kde() and is_flatpak():
+            self.builder.get_object("ButtonInstallPlasmaWallpaper").set_visible(True)
+
         if not is_gnome():
-            # Disable static wallpaper functionality for non-GNOME DE
             self.builder.get_object("ToggleStaticWallpaper").set_visible(False)
             self.builder.get_object("LabelBlurRadius").set_visible(False)
             self.builder.get_object("SpinBlurRadius").set_visible(False)
@@ -322,6 +346,52 @@ class ControlPanel(Gtk.Application):
     def on_feeling_lucky(self, *_):
         if self.server is not None:
             self.server.feeling_lucky()
+
+    def on_install_plasma_wallpaper(self, *_):
+        src = _find_plasma_wallpaper_dir(self.pkgdatadir)
+        if src is None:
+            self._show_error(
+                _("Couldn't find the Plasma wallpaper plugin bundled with Hidamari")
+            )
+            return
+
+        which = subprocess.run(
+            ["flatpak-spawn", "--host", "which", "kpackagetool5"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if which.returncode != 0:
+            self._show_error(_("kpackagetool5 isn't available on the host system"))
+            return
+
+        dst = os.path.join(GLib.get_user_data_dir(), "hidamari", "plasma-wallpaper")
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+
+        install = subprocess.run(
+            [
+                "flatpak-spawn",
+                "--host",
+                "kpackagetool5",
+                "--type",
+                "Plasma/Wallpaper",
+                "--install",
+                dst,
+            ]
+        )
+        if install.returncode != 0:
+            install = subprocess.run(
+                [
+                    "flatpak-spawn",
+                    "--host",
+                    "kpackagetool5",
+                    "--type",
+                    "Plasma/Wallpaper",
+                    "--upgrade",
+                    dst,
+                ]
+            )
+        if install.returncode != 0:
+            self._show_error(_("Failed to install the Plasma wallpaper plugin"))
 
     def set_mute_toggle_icon(self):
         toggle_icon: Gtk.Image = self.builder.get_object("ToggleMuteIcon")
@@ -547,6 +617,19 @@ def _find_gresource(pkgdatadir):
     return next((c for c in candidates if os.path.isfile(c)), None)
 
 
+def _find_plasma_wallpaper_dir(pkgdatadir):
+    """Locate the bundled Plasma wallpaper KPackage directory.
+
+    `pkgdatadir` is `$prefix/share/hidamari`; the KPackage installs as a
+    sibling under `$prefix/share/plasma/wallpapers/<id>` (see
+    `data/meson.build`).
+    """
+    candidate = os.path.join(
+        os.path.dirname(pkgdatadir), "plasma", "wallpapers", PLASMA_WALLPAPER_ID
+    )
+    return candidate if os.path.isdir(candidate) else None
+
+
 def main(version="devel", pkgdatadir="/usr/share/hidamari", localedir="/usr/share/locale"):
     init_translations(localedir)
     gresource = _find_gresource(pkgdatadir)
@@ -556,7 +639,7 @@ def main(version="devel", pkgdatadir="/usr/share/hidamari", localedir="/usr/shar
     Gio.Resource.load(gresource)._register()
     Gtk.IconTheme.get_default().add_resource_path("/io/jeffshee/Hidamari/icons")
 
-    app = ControlPanel(version)
+    app = ControlPanel(version, pkgdatadir)
     app.run(sys.argv)
 
 

@@ -66,6 +66,29 @@ Run:
 flatpak run io.github.jeffshee.Hidamari
 ```
 
+### Build from source 🛠️
+Clone the repository and install with [Meson](https://mesonbuild.com/), via the top-level
+`Makefile`:
+```bash
+git clone https://github.com/jeffshee/hidamari.git
+cd hidamari
+make install
+```
+This installs into `~/.local` (no `sudo` needed). See [docs/dev.md](docs/dev.md) for the full
+list of dependencies, a system-wide install (`sudo make install PREFIX=/usr/local`), and
+building as a Flatpak from source instead.
+
+### KDE Plasma wallpaper plugin 🖥️
+On KDE Plasma, Hidamari can also register itself as a wallpaper plugin, selectable from
+System Settings > Appearance > Wallpaper, kept in sync with the standalone app.
+`make install` registers it automatically whenever `kpackagetool5` is available. To install
+it manually instead (for example, on a Flatpak install, or if you skipped `kpackagetool5`):
+```bash
+kpackagetool5 --type Plasma/Wallpaper --install data/plasma/wallpapers/io.github.jeffshee.Hidamari.wallpaper
+```
+Flatpak users can also install it from within the running app, via the "Install Plasma
+wallpaper plugin" button in the hamburger menu.
+
 ### Unofficial package
 These are maintained by the community!
 | Distro     | URL                                     | Maintainer                            |
