@@ -119,6 +119,16 @@ installed it via the GUI's "Install Plasma wallpaper plugin" button, remove it m
 kpackagetool5 --type Plasma/Wallpaper --remove io.github.jeffshee.Hidamari.wallpaper
 ```
 
+### Plasma wallpaper plugin development
+Previewing `contents/ui/main.qml`/`config.qml` changes doesn't require a full reinstall and
+System Settings restart. `plasmawindowed` (part of `plasma-workspace` on both Ubuntu and Fedora)
+loads a single plugin, by ID, in its own window against a real Plasma session:
+```bash
+kpackagetool5 --type Plasma/Wallpaper --upgrade data/plasma/wallpapers/io.github.jeffshee.Hidamari.wallpaper
+plasmawindowed io.github.jeffshee.Hidamari.wallpaper
+```
+`make plasma-preview` wraps both steps.
+
 ## Build as Flatpak
 First, please make sure you have `flatpak` and `flatpak-builder` installed on your system. For more details, please refer to the [Flatpak official documentation](https://docs.flatpak.org/en/latest/first-build.html).
 

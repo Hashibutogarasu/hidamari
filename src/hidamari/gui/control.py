@@ -60,6 +60,15 @@ APP_ID = f"{PROJECT}.gui"
 APP_TITLE = "Hidamari"
 APP_UI_RESOURCE_PATH = "/io/jeffshee/Hidamari/control.ui"
 
+DBUS_PROPERTY_TO_CONFIG_KEY = {
+    "volume": CONFIG_KEY_VOLUME,
+    "is_mute": CONFIG_KEY_MUTE,
+    "blur_radius": CONFIG_KEY_BLUR_RADIUS,
+    "is_static_wallpaper": CONFIG_KEY_STATIC_WALLPAPER,
+    "is_pause_when_maximized": CONFIG_KEY_PAUSE_WHEN_MAXIMIZED,
+    "is_mute_when_maximized": CONFIG_KEY_MUTE_WHEN_MAXIMIZED,
+}
+
 
 class ControlPanel(Gtk.Application):
     def __init__(self, version, pkgdatadir="/usr/share/hidamari", *args, **kwargs):
@@ -113,8 +122,16 @@ class ControlPanel(Gtk.Application):
     def _connect_server(self):
         try:
             self.server = SessionBus().get(DBUS_NAME_SERVER)
+            self.server.PropertiesChanged.connect(self._on_server_properties_changed)
         except GLib.Error:
             logger.error("[GUI] Couldn't connect to server")
+
+    def _on_server_properties_changed(self, _interface_name, changed, _invalidated):
+        for name, value in changed.items():
+            config_key = DBUS_PROPERTY_TO_CONFIG_KEY.get(name)
+            if config_key is not None:
+                self.config[config_key] = value
+        self._reload_all_widgets()
 
     def _setup_context_menu(self):
         self.contextMenu_monitors = Gtk.Menu()

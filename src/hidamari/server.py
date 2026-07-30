@@ -5,6 +5,7 @@ import signal
 import time
 from multiprocessing import Process
 
+import pydbus
 import setproctitle
 from gi.repository import GLib
 from pydbus import SessionBus
@@ -36,6 +37,8 @@ from hidamari.utils import ConfigUtil, EndSessionHandler, get_video_paths
 
 loop = GLib.MainLoop()
 logger = logging.getLogger(LOGGER_NAME)
+
+DBUS_INTERFACE_SERVER = "io.github.jeffshee.hidamari.server"
 
 
 class HidamariServer:
@@ -71,6 +74,8 @@ class HidamariServer:
     </interface>
     </node>
     """
+
+    PropertiesChanged = pydbus.generic.signal()
 
     def __init__(self, version, pkgdatadir, localedir, args):
         setproctitle.setproctitle("hidamari-server")
@@ -274,6 +279,7 @@ class HidamariServer:
         player = get_instance(DBUS_NAME_PLAYER)
         if player is not None:
             player.volume = volume
+        self.PropertiesChanged(DBUS_INTERFACE_SERVER, {"volume": volume}, [])
 
     @property
     def blur_radius(self):
@@ -285,6 +291,7 @@ class HidamariServer:
         player = get_instance(DBUS_NAME_PLAYER)
         if player is not None:
             player.reload_config()
+        self.PropertiesChanged(DBUS_INTERFACE_SERVER, {"blur_radius": blur_radius}, [])
 
     @property
     def is_mute(self):
@@ -296,6 +303,7 @@ class HidamariServer:
         player = get_instance(DBUS_NAME_PLAYER)
         if player is not None:
             player.is_mute = is_mute
+        self.PropertiesChanged(DBUS_INTERFACE_SERVER, {"is_mute": is_mute}, [])
 
     @property
     def is_playing(self):
@@ -327,6 +335,9 @@ class HidamariServer:
         player = get_instance(DBUS_NAME_PLAYER)
         if player is not None:
             player.reload_config()
+        self.PropertiesChanged(
+            DBUS_INTERFACE_SERVER, {"is_static_wallpaper": is_static_wallpaper}, []
+        )
 
     @property
     def is_pause_when_maximized(self):
@@ -338,6 +349,9 @@ class HidamariServer:
         player = get_instance(DBUS_NAME_PLAYER)
         if player is not None:
             player.reload_config()
+        self.PropertiesChanged(
+            DBUS_INTERFACE_SERVER, {"is_pause_when_maximized": is_pause_when_maximized}, []
+        )
 
     @property
     def is_mute_when_maximized(self):
@@ -349,6 +363,9 @@ class HidamariServer:
         player = get_instance(DBUS_NAME_PLAYER)
         if player is not None:
             player.reload_config()
+        self.PropertiesChanged(
+            DBUS_INTERFACE_SERVER, {"is_mute_when_maximized": is_mute_when_maximized}, []
+        )
 
 
 def get_instance(dbus_name):
