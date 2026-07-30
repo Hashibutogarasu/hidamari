@@ -1,5 +1,14 @@
-desktop_file = i18n.merge_file(
+desktop_conf = configuration_data()
+desktop_conf.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
+
+desktop_file_in = configure_file(
   input: 'io.github.jeffshee.Hidamari.desktop.in',
+  output: 'io.github.jeffshee.Hidamari.desktop.in.configured',
+  configuration: desktop_conf,
+)
+
+desktop_file = i18n.merge_file(
+  input: desktop_file_in,
   output: 'io.github.jeffshee.Hidamari.desktop',
   type: 'desktop',
   po_dir: '../po',
